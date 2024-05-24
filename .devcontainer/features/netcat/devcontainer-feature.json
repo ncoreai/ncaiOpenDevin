@@ -1,0 +1,12 @@
+{
+    "id": "netcat",
+    "version": "1.0.0",
+    "name": "Netcat",
+    "description": "Installs Netcat on the container.",
+    "installs": [
+        {
+            "method": "script",
+            "script": "install.sh"
+        }
+    ]
+}

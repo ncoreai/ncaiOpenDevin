@@ -1,0 +1,16 @@
+{
+    "id": "sqlite",
+    "version": "1.0.0",
+    "name": "SQLite",
+    "description": "Installs SQLite on the container.",
+    "options": {
+        "version": {
+            "type": "string",
+            "default": "3350000",
+            "description": "The version of SQLite to install. Use '3350000' for version 3.35 or specify another version number (e.g., '3410000' for version 3.41.0)."
+        }
+    },
+    "install": {
+        "script": "install.sh"
+    }
+}
