@@ -121,6 +121,7 @@ celerybeat.pid
 
 # Environments
 .env
+frontend/.env
 .venv
 env/
 venv/
@@ -161,14 +162,27 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 .vscode/
+.cursorignore
 
 # evaluation
+evaluation/evaluation_outputs
+evaluation/outputs
+evaluation/swe_bench/eval_workspace*
 evaluation/SWE-bench/data
+evaluation/webarena/scripts/webarena_env.sh
+evaluation/bird/data
+evaluation/gaia/data
+evaluation/gorilla/data
+evaluation/toolqa/data
+evaluation/scienceagentbench/benchmark
+evaluation/commit0_bench/repos
+
+# openhands resolver
+output/
 
 # frontend
 
 # dependencies
-frontend/node_modules
 frontend/.pnp
 frontend/bun.lockb
 frontend/yarn.lock
@@ -176,6 +190,8 @@ frontend/yarn.lock
 
 # testing
 frontend/coverage
+test_results*
+/_test_files_tmp/
 
 # production
 frontend/build
@@ -203,9 +219,17 @@ cache
 
 # configuration
 config.toml
+config.toml_
 config.toml.bak
-evaluation/swe_bench/eval_workspace
-evaluation/outputs
-evaluation/evaluation_outputs
-test_results*
-/_test_files_tmp/
+
+# swe-bench-eval
+image_build_logs
+run_instance_logs
+
+runtime_*.tar
+
+# docker build
+containers/runtime/Dockerfile
+containers/runtime/project.tar.gz
+containers/runtime/code
+**/node_modules/

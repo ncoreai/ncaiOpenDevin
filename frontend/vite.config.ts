@@ -1,8 +1,10 @@
 /// <reference types="vitest" />
+/// <reference types="vite-plugin-svgr/client" />
 import { defineConfig, loadEnv } from "vite";
-import react from "@vitejs/plugin-react";
 import viteTsconfigPaths from "vite-tsconfig-paths";
-import path from "path";
+import svgr from "vite-plugin-svgr";
+import { reactRouter } from "@react-router/dev/vite";
+import { configDefaults } from "vitest/config";
 
 export default defineConfig(({ mode }) => {
   const {
@@ -21,18 +23,12 @@ export default defineConfig(({ mode }) => {
   const WS_URL = `${WS_PROTOCOL}://${VITE_BACKEND_HOST}/`;
   const FE_PORT = Number.parseInt(VITE_FRONTEND_PORT, 10);
 
-  // check BACKEND_HOST is something like "example.com"
-  if (!VITE_BACKEND_HOST.match(/^([\w\d-]+(\.[\w\d-]+)+(:\d+)?)/)) {
-    throw new Error(
-      `Invalid BACKEND_HOST ${VITE_BACKEND_HOST}, example BACKEND_HOST 127.0.0.1:3000`,
-    );
-  }
-
   return {
-    // depending on your application, base can also be "/"
-    base: "",
-    plugins: [react(), viteTsconfigPaths()],
-    clearScreen: false,
+    plugins: [
+      !process.env.VITEST && reactRouter(),
+      viteTsconfigPaths(),
+      svgr(),
+    ],
     server: {
       port: FE_PORT,
       proxy: {
@@ -47,12 +43,29 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: !INSECURE_SKIP_VERIFY,
         },
+        "/socket.io": {
+          target: WS_URL,
+          ws: true,
+          changeOrigin: true,
+          secure: !INSECURE_SKIP_VERIFY,
+          // rewriteWsOrigin: true,
+        },
       },
     },
+    ssr: {
+      noExternal: ["react-syntax-highlighter"],
+    },
+    clearScreen: false,
     test: {
       environment: "jsdom",
-      globals: true,
       setupFiles: ["vitest.setup.ts"],
+      reporters: "basic",
+      exclude: [...configDefaults.exclude, "tests"],
+      coverage: {
+        reporter: ["text", "json", "html", "lcov", "text-summary"],
+        reportsDirectory: "coverage",
+        include: ["src/**/*.{ts,tsx}"],
+      },
     },
   };
 });

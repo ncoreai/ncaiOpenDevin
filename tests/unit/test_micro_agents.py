@@ -2,18 +2,48 @@ import json
 import os
 from unittest.mock import MagicMock
 
+import pytest
 import yaml
+from pytest import TempPathFactory
 
-from agenthub.micro.registry import all_microagents
-from opendevin.controller.agent import Agent
-from opendevin.controller.state.state import State
-from opendevin.events import EventSource
-from opendevin.events.action import MessageAction
-from opendevin.events.observation import NullObservation
+from openhands.agenthub.micro.registry import all_microagents
+from openhands.controller.agent import Agent
+from openhands.controller.state.state import State
+from openhands.core.config import AgentConfig
+from openhands.events.action import MessageAction
+from openhands.events.stream import EventStream
+from openhands.storage import get_file_store
+
+
+@pytest.fixture
+def temp_dir(tmp_path_factory: TempPathFactory) -> str:
+    return str(tmp_path_factory.mktemp('test_micro_agents'))
+
+
+@pytest.fixture
+def event_stream(temp_dir):
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('asdf', file_store)
+    yield event_stream
+
+    # clear after each test
+    event_stream.clear()
+
+
+@pytest.fixture
+def agent_configs():
+    return {
+        'CoderAgent': AgentConfig(memory_enabled=True),
+        'PlannerAgent': AgentConfig(memory_enabled=True),
+    }
 
 
 def test_all_agents_are_loaded():
-    full_path = os.path.join('agenthub', 'micro')
+    assert all_microagents is not None
+    assert len(all_microagents) > 1
+
+    base = os.path.join('openhands', 'agenthub', 'micro')
+    full_path = os.path.dirname(__file__) + '/../../' + base
     agent_names = set()
     for root, _, files in os.walk(full_path):
         for file in files:
@@ -25,56 +55,83 @@ def test_all_agents_are_loaded():
     assert agent_names == set(all_microagents.keys())
 
 
-def test_coder_agent_with_summary():
-    """
-    Coder agent should render code summary as part of prompt
-    """
+def test_coder_agent_with_summary(event_stream: EventStream, agent_configs: dict):
+    """Coder agent should render code summary as part of prompt"""
     mock_llm = MagicMock()
     content = json.dumps({'action': 'finish', 'args': {}})
-    mock_llm.do_completion.return_value = {
-        'choices': [{'message': {'content': content}}]
-    }
+    mock_llm.completion.return_value = {'choices': [{'message': {'content': content}}]}
+    mock_llm.format_messages_for_llm.return_value = [
+        {
+            'role': 'user',
+            'content': "This is a dummy task. This is a dummy summary about this repo. Here's a summary of the codebase, as it relates to this task.",
+        }
+    ]
 
-    coder_agent = Agent.get_cls('CoderAgent')(llm=mock_llm)
+    coder_agent = Agent.get_cls('CoderAgent')(
+        llm=mock_llm, config=agent_configs['CoderAgent']
+    )
     assert coder_agent is not None
 
+    # give it some history
     task = 'This is a dummy task'
-    history = [(MessageAction(content=task), NullObservation(''))]
-    history[0][0]._source = EventSource.USER
+    history = list()
+    history.append(MessageAction(content=task))
+
     summary = 'This is a dummy summary about this repo'
     state = State(history=history, inputs={'summary': summary})
     coder_agent.step(state)
 
-    mock_llm.do_completion.assert_called_once()
-    _, kwargs = mock_llm.do_completion.call_args
-    prompt = kwargs['messages'][0]['content']
+    mock_llm.completion.assert_called_once()
+    _, kwargs = mock_llm.completion.call_args
+    prompt_element = kwargs['messages'][0]['content']
+    if isinstance(prompt_element, dict):
+        prompt = prompt_element['content']
+    else:
+        prompt = prompt_element
     assert task in prompt
     assert "Here's a summary of the codebase, as it relates to this task" in prompt
     assert summary in prompt
 
 
-def test_coder_agent_without_summary():
-    """
-    When there's no codebase_summary available, there shouldn't be any prompt
+def test_coder_agent_without_summary(event_stream: EventStream, agent_configs: dict):
+    """When there's no codebase_summary available, there shouldn't be any prompt
     about 'code summary'
     """
     mock_llm = MagicMock()
     content = json.dumps({'action': 'finish', 'args': {}})
-    mock_llm.do_completion.return_value = {
-        'choices': [{'message': {'content': content}}]
-    }
+    mock_llm.completion.return_value = {'choices': [{'message': {'content': content}}]}
+    mock_llm.format_messages_for_llm.return_value = [
+        {
+            'role': 'user',
+            'content': [
+                {
+                    'type': 'text',
+                    'text': "This is a dummy task. This is a dummy summary about this repo. Here's a summary of the codebase, as it relates to this task.",
+                }
+            ],
+        }
+    ]
 
-    coder_agent = Agent.get_cls('CoderAgent')(llm=mock_llm)
+    coder_agent = Agent.get_cls('CoderAgent')(
+        llm=mock_llm, config=agent_configs['CoderAgent']
+    )
     assert coder_agent is not None
 
+    # give it some history
     task = 'This is a dummy task'
-    history = [(MessageAction(content=task), NullObservation(''))]
-    history[0][0]._source = EventSource.USER
+    history = list()
+    history.append(MessageAction(content=task))
+
+    # set state without codebase summary
     state = State(history=history)
     coder_agent.step(state)
 
-    mock_llm.do_completion.assert_called_once()
-    _, kwargs = mock_llm.do_completion.call_args
-    prompt = kwargs['messages'][0]['content']
-    assert task in prompt
+    mock_llm.completion.assert_called_once()
+    _, kwargs = mock_llm.completion.call_args
+    prompt_element = kwargs['messages'][0]['content']
+    if isinstance(prompt_element, dict):
+        prompt = prompt_element['content']
+    else:
+        prompt = prompt_element
+    print(f'\n{prompt_element}\n')
     assert "Here's a summary of the codebase, as it relates to this task" not in prompt

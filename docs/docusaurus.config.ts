@@ -3,17 +3,17 @@ import type { Config } from "@docusaurus/types";
 import { themes as prismThemes } from "prism-react-renderer";
 
 const config: Config = {
-  title: "OpenDevin",
+  title: "OpenHands",
   tagline: "Code Less, Make More",
-  favicon: "img/logo.png",
+  favicon: "img/logo-square.png",
 
   // Set the production url of your site here
-  url: "https://OpenDevin.github.io",
-  baseUrl: "/OpenDevin/",
+  url: "https://docs.all-hands.dev",
+  baseUrl: "/",
 
   // GitHub pages deployment config.
-  organizationName: "OpenDevin",
-  projectName: "OpenDevin",
+  organizationName: "All-Hands-AI",
+  projectName: "OpenHands",
   trailingSlash: false,
 
   onBrokenLinks: "throw",
@@ -23,10 +23,19 @@ const config: Config = {
   // useful metadata like html lang. For example, if your site is Chinese, you
   // may want to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: "en",
-    locales: ["en"],
+    defaultLocale: 'en',
+    locales: ['en', 'fr', 'zh-Hans'],
+    localeConfigs: {
+      en: {
+        htmlLang: 'en-GB',
+      },
+    },
   },
 
+  markdown: {
+    mermaid: true,
+  },
+  themes: ['@docusaurus/theme-mermaid'],
   presets: [
     [
       "classic",
@@ -51,13 +60,12 @@ const config: Config = {
       } satisfies Preset.Options,
     ],
   ],
-
   themeConfig: {
     image: "img/docusaurus.png",
     navbar: {
-      title: "OpenDevin",
+      title: "OpenHands",
       logo: {
-        alt: "OpenDevin",
+        alt: "OpenHands",
         src: "img/logo.png",
       },
       items: [
@@ -65,58 +73,29 @@ const config: Config = {
           type: "docSidebar",
           sidebarId: "docsSidebar",
           position: "left",
-          label: "Docs",
+          label: "User Guides",
         },
         {
           type: "docSidebar",
           sidebarId: "apiSidebar",
           position: "left",
-          label: "Codebase",
+          label: "Python API",
         },
-        { to: "/faq", label: "FAQ", position: "left" },
         {
-          href: "https://github.com/OpenDevin/OpenDevin",
+          type: 'localeDropdown',
+          position: 'left',
+        },
+        {
+          href: "https://all-hands.dev",
+          label: "Company",
+          position: "right",
+        },
+        {
+          href: "https://github.com/All-Hands-AI/OpenHands",
           label: "GitHub",
           position: "right",
         },
       ],
-    },
-    footer: {
-      style: "dark",
-      links: [
-        {
-          title: "OpenDevin",
-          items: [
-            {
-              label: "Docs",
-              to: "/modules/usage/intro",
-            },
-          ],
-        },
-        {
-          title: "Community",
-          items: [
-            {
-              label: "Slack",
-              href: "https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw"
-            },
-            {
-              label: "Discord",
-              href: "https://discord.gg/ESHStjSjD4",
-            },
-          ],
-        },
-        {
-          title: "More",
-          items: [
-            {
-              label: "GitHub",
-              href: "https://github.com/OpenDevin/OpenDevin",
-            },
-          ],
-        },
-      ],
-      copyright: `Copyright © ${new Date().getFullYear()} OpenDevin`,
     },
     prism: {
       theme: prismThemes.oneLight,
